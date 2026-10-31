@@ -8,7 +8,7 @@ export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.DEV
     ? 'http://127.0.0.1:8080/api'
-    : 'https://edtech-api.onrender.com/api');
+    : 'https://lumora-edtech-crm.onrender.com/api');
 
 export const ENDPOINTS = {
   LOGIN: '/auth/login',
