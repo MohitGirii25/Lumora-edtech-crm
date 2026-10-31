@@ -1,0 +1,1 @@
+import{GraduationCap}from'lucide-react';export default function Brand(){return <a className="brand" href="/"><span className="brand-mark"><GraduationCap size={22}/></span><span>brightpath<span className="brand-dot">.</span></span></a>}
