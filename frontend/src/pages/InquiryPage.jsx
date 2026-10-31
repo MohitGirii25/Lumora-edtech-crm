@@ -1,7 +1,226 @@
-import{useState}from'react';import{Link}from'react-router-dom';import{ArrowRight,CheckCircle2,LockKeyhole,LoaderCircle,Sparkles}from'lucide-react';import Brand from'../components/Brand.jsx';import{api,errorMessage}from'../services/api.js';
-const initial={userType:'',category:'',fullName:'',email:'',phone:'',message:''};
-export default function InquiryPage(){const[data,setData]=useState(initial),[errors,setErrors]=useState({}),[busy,setBusy]=useState(false),[sent,setSent]=useState(false),[failure,setFailure]=useState('');const change=e=>setData({...data,[e.target.name]:e.target.value});
-function validate(){const x={};if(!data.userType)x.userType='Please choose who you are.';if(!data.category)x.category='Please choose a topic.';if(data.fullName.trim().length<2)x.fullName='Enter your full name.';if(!/^\S+@\S+\.\S+$/.test(data.email))x.email='Enter a valid email address.';if(!/^[+\d() .-]{7,24}$/.test(data.phone))x.phone='Enter a valid phone number.';if(data.message.trim().length<5)x.message='Please add a little more detail.';setErrors(x);return !Object.keys(x).length;}
-async function submit(e){e.preventDefault();setFailure('');if(!validate())return;setBusy(true);try{await api.post('/inquiries',data);setSent(true);setData(initial);}catch(err){setFailure(errorMessage(err));}finally{setBusy(false);}}
-return <main className="public-shell"><header className="topbar"><Brand/><div className="top-actions"><span className="secure-note"><LockKeyhole size={14}/> Your information is secure</span><Link className="admin-link" to="/admin/login">Admin login <ArrowRight size={15}/></Link></div></header><section className="hero"><div className="hero-copy"><span className="eyebrow"><Sparkles size={14}/> YOUR NEXT CHAPTER STARTS HERE</span><h1>Big goals begin<br/>with a <span>conversation.</span></h1><p>Tell us what you’re looking for. Our education team will help you find the right path forward.</p><div className="hero-foot"><div className="avatar-stack"><i>AM</i><i>JR</i><i>SK</i><b>+</b></div><span>Friendly people, real answers<br/><strong>We’ll be in touch shortly</strong></span></div></div><div className="form-card"><div className="form-heading"><div><span className="form-kicker">LET’S CONNECT</span><h2>Send us an inquiry</h2></div><span className="step-chip">01 <span>/ 01</span></span></div><p className="form-intro">Fill in your details and we’ll get back to you soon.</p>{sent?<div className="success-box"><CheckCircle2 size={30}/><h3>Thanks for reaching out!</h3><p>Your inquiry is with our team. We’ll be in touch soon.</p><button className="button secondary" onClick={()=>setSent(false)}>Send another inquiry</button></div>:<form onSubmit={submit} noValidate><div className="two-fields"><Field label="I am a" error={errors.userType}><select name="userType" value={data.userType} onChange={change}><option value="">Select user type</option><option value="PARENT">Parent</option><option value="STUDENT">Student</option><option value="SCHOOL">School</option></select></Field><Field label="I’m interested in" error={errors.category}><select name="category" value={data.category} onChange={change}><option value="">Choose a topic</option><option value="SCHOLARSHIP">Scholarship</option><option value="CONCERT">Concert</option><option value="ADMISSION">Admission</option><option value="GENERAL_QUERY">General Query</option></select></Field></div><Field label="Full name" error={errors.fullName}><input name="fullName" autoComplete="name" placeholder="e.g. Alex Morgan" value={data.fullName} onChange={change}/></Field><div className="two-fields"><Field label="Email address" error={errors.email}><input type="email" name="email" autoComplete="email" placeholder="you@example.com" value={data.email} onChange={change}/></Field><Field label="Phone number" error={errors.phone}><input type="tel" name="phone" autoComplete="tel" placeholder="+1 (555) 000-0000" value={data.phone} onChange={change}/></Field></div><Field label="How can we help?" error={errors.message}><textarea name="message" placeholder="A little about what you’re looking for…" rows="3" value={data.message} onChange={change}/></Field>{failure&&<div className="error-banner">{failure}</div>}<button className="button primary full" disabled={busy}>{busy?<><LoaderCircle className="spin" size={18}/> Sending inquiry…</>:<>Submit inquiry <ArrowRight size={17}/></>}</button><p className="privacy-note"><LockKeyhole size={13}/> Your details are only used to respond to your inquiry.</p></form>}</div></section><footer className="public-footer"><span>© 2026 Brightpath Education</span><span>Thoughtful guidance. Brighter futures.</span></footer></main>}
-function Field({label,error,children}){return <label className="field"><span>{label}</span>{children}{error&&<small className="field-error">{error}</small>}</label>}
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  ArrowRight,
+  CheckCircle2,
+  LockKeyhole,
+  LoaderCircle,
+  Sparkles,
+} from "lucide-react";
+import Brand from "../components/Brand.jsx";
+import { api, errorMessage } from "../services/api.js";
+const initial = {
+  userType: "",
+  category: "",
+  fullName: "",
+  email: "",
+  phone: "",
+  message: "",
+};
+export default function InquiryPage() {
+  const [data, setData] = useState(initial),
+    [errors, setErrors] = useState({}),
+    [busy, setBusy] = useState(false),
+    [sent, setSent] = useState(false),
+    [failure, setFailure] = useState("");
+  const change = (e) => setData({ ...data, [e.target.name]: e.target.value });
+  function validate() {
+    const x = {};
+    if (!data.userType) x.userType = "Please choose who you are.";
+    if (!data.category) x.category = "Please choose a topic.";
+    if (data.fullName.trim().length < 2) x.fullName = "Enter your full name.";
+    if (!/^\S+@\S+\.\S+$/.test(data.email))
+      x.email = "Enter a valid email address.";
+    if (!/^[+\d() .-]{7,24}$/.test(data.phone))
+      x.phone = "Enter a valid phone number.";
+    if (data.message.trim().length < 5)
+      x.message = "Please add a little more detail.";
+    setErrors(x);
+    return !Object.keys(x).length;
+  }
+  async function submit(e) {
+    e.preventDefault();
+    setFailure("");
+    if (!validate()) return;
+    setBusy(true);
+    try {
+      await api.post("/inquiries", data);
+      setSent(true);
+      setData(initial);
+    } catch (err) {
+      setFailure(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <main className="public-shell">
+      <header className="topbar">
+        <Brand />
+        <div className="top-actions">
+          <span className="secure-note">
+            <LockKeyhole size={14} /> Your information is secure
+          </span>
+          <Link className="admin-link" to="/admin/login">
+            Admin login <ArrowRight size={15} />
+          </Link>
+        </div>
+      </header>
+      <section className="hero">
+        <div className="hero-copy">
+          <span className="eyebrow">
+            <Sparkles size={14} /> YOUR NEXT CHAPTER STARTS HERE
+          </span>
+          <h1>
+            Big goals begin
+            <br />
+            with a <span>conversation.</span>
+          </h1>
+          <p>
+            Tell us what you’re looking for. Our education team will help you
+            find the right path forward.
+          </p>
+          <div className="hero-foot">
+            <div className="avatar-stack">
+              <i>AM</i>
+              <i>JR</i>
+              <i>SK</i>
+              <b>+</b>
+            </div>
+            <span>
+              Friendly people, real answers
+              <br />
+              <strong>We’ll be in touch shortly</strong>
+            </span>
+          </div>
+        </div>
+        <div className="form-card">
+          <div className="form-heading">
+            <div>
+              <span className="form-kicker">LET’S CONNECT</span>
+              <h2>Send us an inquiry</h2>
+            </div>
+            <span className="step-chip">
+              01 <span>/ 01</span>
+            </span>
+          </div>
+          <p className="form-intro">
+            Fill in your details and we’ll get back to you soon.
+          </p>
+          {sent ? (
+            <div className="success-box">
+              <CheckCircle2 size={30} />
+              <h3>Thanks for reaching out!</h3>
+              <p>Your inquiry is with our team. We’ll be in touch soon.</p>
+              <button
+                className="button secondary"
+                onClick={() => setSent(false)}
+              >
+                Send another inquiry
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={submit} noValidate>
+              <div className="two-fields">
+                <Field label="I am a" error={errors.userType}>
+                  <select
+                    name="userType"
+                    value={data.userType}
+                    onChange={change}
+                  >
+                    <option value="">Select user type</option>
+                    <option value="PARENT">Parent</option>
+                    <option value="STUDENT">Student</option>
+                    <option value="SCHOOL">School</option>
+                  </select>
+                </Field>
+                <Field label="I’m interested in" error={errors.category}>
+                  <select
+                    name="category"
+                    value={data.category}
+                    onChange={change}
+                  >
+                    <option value="">Choose a topic</option>
+                    <option value="SCHOLARSHIP">Scholarship</option>
+                    <option value="CONCERT">Concert</option>
+                    <option value="ADMISSION">Admission</option>
+                    <option value="GENERAL_QUERY">General Query</option>
+                  </select>
+                </Field>
+              </div>
+              <Field label="Full name" error={errors.fullName}>
+                <input
+                  name="fullName"
+                  autoComplete="name"
+                  placeholder="e.g. Alex Morgan"
+                  value={data.fullName}
+                  onChange={change}
+                />
+              </Field>
+              <div className="two-fields">
+                <Field label="Email address" error={errors.email}>
+                  <input
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={data.email}
+                    onChange={change}
+                  />
+                </Field>
+                <Field label="Phone number" error={errors.phone}>
+                  <input
+                    type="tel"
+                    name="phone"
+                    autoComplete="tel"
+                    placeholder="+1 (555) 000-0000"
+                    value={data.phone}
+                    onChange={change}
+                  />
+                </Field>
+              </div>
+              <Field label="How can we help?" error={errors.message}>
+                <textarea
+                  name="message"
+                  placeholder="A little about what you’re looking for…"
+                  rows="3"
+                  value={data.message}
+                  onChange={change}
+                />
+              </Field>
+              {failure && <div className="error-banner">{failure}</div>}
+              <button className="button primary full" disabled={busy}>
+                {busy ? (
+                  <>
+                    <LoaderCircle className="spin" size={18} /> Sending inquiry…
+                  </>
+                ) : (
+                  <>
+                    Submit inquiry <ArrowRight size={17} />
+                  </>
+                )}
+              </button>
+              <p className="privacy-note">
+                <LockKeyhole size={13} /> Your details are only used to respond
+                to your inquiry.
+              </p>
+            </form>
+          )}
+        </div>
+      </section>
+      <footer className="public-footer">
+        <span>© 2026 Brightpath Education</span>
+        <span>Thoughtful guidance. Brighter futures.</span>
+      </footer>
+    </main>
+  );
+}
+function Field({ label, error, children }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      {children}
+      {error && <small className="field-error">{error}</small>}
+    </label>
+  );
+}

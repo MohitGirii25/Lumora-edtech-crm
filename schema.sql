@@ -17,7 +17,7 @@ BEGIN
         ON CONFLICT (email) DO NOTHING;
         PERFORM setval(pg_get_serial_sequence('admins', 'id'), GREATEST(COALESCE((SELECT MAX(id) FROM admins), 1), 1), EXISTS (SELECT 1 FROM admins));
     END IF;
-END
+END;
 $$;
 
 CREATE TABLE IF NOT EXISTS inquiries (
@@ -52,5 +52,5 @@ BEGIN
         EXECUTE 'REVOKE ALL ON TABLE admins FROM authenticated';
         EXECUTE 'REVOKE ALL ON TABLE inquiries FROM authenticated';
     END IF;
-END
+END;
 $$;
