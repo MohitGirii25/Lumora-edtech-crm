@@ -39,15 +39,17 @@ async function createInquiry(data) {
   return inquiryFromRow(rows[0]);
 }
 
-async function listInquiries({ category, userType, search, page=0, size=10 }) {
+async function listInquiries({ category, userType, status, search, sort = 'newest', page=0, size=10 }) {
   const offset = page * size;
   const params = [];
   let where = 'WHERE 1=1';
   if (category) { params.push(category); where += ` AND category=$${params.length}`; }
   if (userType) { params.push(userType); where += ` AND user_type=$${params.length}`; }
+  if (status) { params.push(status); where += ` AND status=$${params.length}`; }
   if (search) { params.push(`%${search}%`); where += ` AND (full_name ILIKE $${params.length} OR phone ILIKE $${params.length})`; }
   params.push(size, offset);
-  const { rows } = await pool.query(`SELECT * FROM inquiries ${where} ORDER BY created_at DESC LIMIT $${params.length-1} OFFSET $${params.length}`, params);
+  const ordering = sort === 'oldest' ? 'ASC' : 'DESC';
+  const { rows } = await pool.query(`SELECT * FROM inquiries ${where} ORDER BY created_at ${ordering}, id ${ordering} LIMIT $${params.length-1} OFFSET $${params.length}`, params);
   const { rows: c } = await pool.query(`SELECT COUNT(*)::int AS total FROM inquiries ${where}`, params.slice(0, params.length-2));
   const totalElements = c[0].total;
   return { content: rows.map(inquiryFromRow), totalElements, totalPages: Math.ceil(totalElements / size), number: page, size };
@@ -74,4 +76,26 @@ async function stats() {
   };
 }
 
-module.exports = { ensureInquiryTable, createInquiry, listInquiries, getInquiry, updateStatus, stats };
+async function analytics({ days, interval }) {
+  const filter = `created_at >= NOW() - ($1::text || ' days')::interval`;
+  const [statusRows, categoryRows, userTypeRows, trendRows] = await Promise.all([
+    pool.query(`SELECT status, COUNT(*)::int AS count FROM inquiries WHERE ${filter} GROUP BY status`, [days]),
+    pool.query(`SELECT category, COUNT(*)::int AS count FROM inquiries WHERE ${filter} GROUP BY category`, [days]),
+    pool.query(`SELECT user_type, COUNT(*)::int AS count FROM inquiries WHERE ${filter} GROUP BY user_type`, [days]),
+    pool.query(`SELECT date_trunc($2, created_at) AS bucket, COUNT(*)::int AS count FROM inquiries WHERE ${filter} GROUP BY bucket ORDER BY bucket`, [days, interval])
+  ]);
+  const status = Object.fromEntries(statusRows.rows.map(row => [row.status, row.count]));
+  const categories = Object.fromEntries(categoryRows.rows.map(row => [row.category, row.count]));
+  const userTypes = Object.fromEntries(userTypeRows.rows.map(row => [row.user_type, row.count]));
+  return {
+    total: Object.values(status).reduce((sum, count) => sum + count, 0),
+    newCount: status.NEW || 0,
+    inProgress: status.IN_PROGRESS || 0,
+    resolved: status.RESOLVED || 0,
+    categories,
+    userTypes,
+    trend: trendRows.rows.map(row => ({ bucket: row.bucket, count: row.count }))
+  };
+}
+
+module.exports = { ensureInquiryTable, createInquiry, listInquiries, getInquiry, updateStatus, stats, analytics };

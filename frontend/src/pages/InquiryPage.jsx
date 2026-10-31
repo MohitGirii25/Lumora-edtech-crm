@@ -209,7 +209,7 @@ export default function InquiryPage() {
         </div>
       </section>
       <footer className="public-footer">
-        <span>© 2026 Brightpath Education</span>
+        <span>© 2026 Lumora</span>
         <span>Thoughtful guidance. Brighter futures.</span>
       </footer>
     </main>

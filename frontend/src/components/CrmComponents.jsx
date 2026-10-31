@@ -1,12 +1,26 @@
-import { useEffect } from 'react';
-import { ArrowUpRight, Check, CircleAlert, Inbox, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, CircleAlert, Inbox, X } from 'lucide-react';
 import { labels } from '../services/api.js';
 
-export function StatCard({ icon: Icon, label, value, tone, hint }) {
+export function StatCard({ icon: Icon, label, value, tone, hint, share = 0 }) {
+  const target = Number(value || 0);
+  const [displayValue, setDisplayValue] = useState(target);
+  useEffect(() => {
+    let frame;
+    const started = performance.now();
+    const from = displayValue;
+    const animate = (now) => {
+      const progress = Math.min(1, (now - started) / 450);
+      setDisplayValue(Math.round(from + (target - from) * (1 - (1 - progress) ** 3)));
+      if (progress < 1) frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [target]);
   return <article className={`stat-card stat-${tone}`} aria-label={`${label}: ${value}`}>
     <span className="stat-icon"><Icon size={18} strokeWidth={1.8} /></span>
-    <div className="stat-copy"><span>{label}</span><strong>{Number(value || 0).toLocaleString()}</strong><small>{hint}</small></div>
-    <ArrowUpRight className="stat-arrow" size={17} aria-hidden="true" />
+    <div className="stat-copy"><span>{label}</span><strong>{displayValue.toLocaleString()}</strong><small>{hint}</small></div>
+    <span className="stat-share" style={{ '--share': `${Math.max(0, Math.min(100, share))}%` }} aria-label={`${Math.round(share)} percent of inquiries`}><span>{Math.round(share)}%</span></span>
   </article>;
 }
 

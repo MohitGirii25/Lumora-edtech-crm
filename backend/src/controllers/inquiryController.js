@@ -18,14 +18,16 @@ async function create(req, res) {
 }
 
 async function list(req, res) {
-  const { category, userType, search, page, size } = req.query;
+  const { category, userType, status, search, sort, page, size } = req.query;
   const currentPage = Number.parseInt(page || '0', 10);
   const pageSize = Number.parseInt(size || '10', 10);
   if (!Number.isInteger(currentPage) || currentPage < 0 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
     return res.status(400).json({ message: 'Page must be nonnegative and size must be between 1 and 100.' });
   }
+  if (status && !['NEW', 'IN_PROGRESS', 'RESOLVED'].includes(status)) return res.status(400).json({ message: 'Choose a valid inquiry status.' });
+  if (sort && !['newest', 'oldest'].includes(sort)) return res.status(400).json({ message: 'Choose a valid date sort order.' });
   try {
-    const data = await inquiryModel.listInquiries({ category, userType, search, page: currentPage, size: pageSize });
+    const data = await inquiryModel.listInquiries({ category, userType, status, search, sort, page: currentPage, size: pageSize });
     res.json(data);
   } catch {
     res.status(500).json({ message: 'Could not load inquiries.' });
@@ -49,4 +51,16 @@ async function dashboard(req, res) {
   res.json(await inquiryModel.stats());
 }
 
-module.exports = { create, list, getOne, patchStatus, dashboard };
+async function dashboardAnalytics(req, res) {
+  const days = Number.parseInt(req.query.days || '30', 10);
+  const interval = req.query.interval || 'day';
+  if (![7, 30, 90, 365].includes(days)) return res.status(400).json({ message: 'Choose a supported analytics date range.' });
+  if (!['day', 'week', 'month'].includes(interval)) return res.status(400).json({ message: 'Choose a supported trend interval.' });
+  try {
+    res.json(await inquiryModel.analytics({ days, interval }));
+  } catch {
+    res.status(500).json({ message: 'Could not load inquiry analytics.' });
+  }
+}
+
+module.exports = { create, list, getOne, patchStatus, dashboard, dashboardAnalytics };
