@@ -75,12 +75,15 @@
 // module.exports = app;
 //-------------------------------------------------------
 
+
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+dotenv.config({
+  path: path.join(__dirname, '..', '.env')
+});
 
 const app = express();
 
@@ -91,6 +94,17 @@ const allowedOrigins = (
   .split(',')
   .map(origin => origin.trim().replace(/\/$/, ''))
   .filter(Boolean);
+
+// Debug environment configuration
+console.log(
+  'CORS ENV VALUE:',
+  process.env.APP_CORS_ALLOWED_ORIGIN
+);
+
+console.log(
+  'CORS PARSED ORIGINS:',
+  JSON.stringify(allowedOrigins)
+);
 
 // CORS configuration
 app.use(
@@ -104,11 +118,17 @@ app.use(
         process.env.NODE_ENV !== 'production' &&
         /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin || '');
 
-      if (
+      console.log('REQUEST ORIGIN:', origin);
+      console.log('NORMALIZED ORIGIN:', normalizedOrigin);
+
+      const isAllowed =
         !origin ||
         allowedOrigins.includes(normalizedOrigin) ||
-        localDevOrigin
-      ) {
+        localDevOrigin;
+
+      console.log('ORIGIN MATCH:', isAllowed);
+
+      if (isAllowed) {
         return callback(null, true);
       }
 
