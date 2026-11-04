@@ -76,23 +76,29 @@
 //-------------------------------------------------------
 
 
+
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 
+// Load environment variables
 dotenv.config({
   path: path.join(__dirname, '..', '.env')
 });
 
 const app = express();
 
-// Allowed frontend origins
+// ==========================================
+// 1. ALLOWED FRONTEND ORIGINS
+// ==========================================
+
 const allowedOrigins = (
-  process.env.APP_CORS_ALLOWED_ORIGIN || 'http://localhost:5173'
+  process.env.APP_CORS_ALLOWED_ORIGIN ||
+  'http://localhost:5173'
 )
   .split(',')
-  .map(origin => origin.trim().replace(/\/$/, ''))
+  .map(origin => origin.trim().replace(/\/+$/, ''))
   .filter(Boolean);
 
 // Debug environment configuration
@@ -106,63 +112,113 @@ console.log(
   JSON.stringify(allowedOrigins)
 );
 
-// CORS configuration
+// ==========================================
+// 2. CORS CONFIGURATION
+// ==========================================
+
 app.use(
   cors({
     origin(origin, callback) {
       const normalizedOrigin = origin
-        ? origin.replace(/\/$/, '')
+        ? origin.trim().replace(/\/+$/, '')
         : '';
 
       const localDevOrigin =
         process.env.NODE_ENV !== 'production' &&
-        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin || '');
-
-      console.log('REQUEST ORIGIN:', origin);
-      console.log('NORMALIZED ORIGIN:', normalizedOrigin);
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(
+          normalizedOrigin
+        );
 
       const isAllowed =
         !origin ||
         allowedOrigins.includes(normalizedOrigin) ||
         localDevOrigin;
 
-      console.log('ORIGIN MATCH:', isAllowed);
+      // Debug request origin
+      console.log('REQUEST ORIGIN:', JSON.stringify(origin));
       console.log(
-  'ORIGIN COMPARISON:',
-  JSON.stringify(
-    allowedOrigins.map(item => ({
-      allowed: item,
-      matches: item === normalizedOrigin,
-      allowedLength: item.length,
-      requestLength: normalizedOrigin.length
-    }))
-  )
-);
+        'NORMALIZED ORIGIN:',
+        JSON.stringify(normalizedOrigin)
+      );
+
+      console.log('ORIGIN MATCH:', isAllowed);
+
+      // Detailed comparison for debugging
+      console.log(
+        'EXACT CORS COMPARISON:',
+        JSON.stringify({
+          request: normalizedOrigin,
+
+          requestCharacters: [...normalizedOrigin].map(
+            char => char.charCodeAt(0)
+          ),
+
+          comparisons: allowedOrigins.map(item => ({
+            allowed: item,
+            matches: item === normalizedOrigin,
+            allowedLength: item.length,
+            requestLength: normalizedOrigin.length,
+
+            allowedCharacters: [...item].map(
+              char => char.charCodeAt(0)
+            ),
+
+            firstDifferentIndex: [...item].findIndex(
+              (char, index) =>
+                char !== [...normalizedOrigin][index]
+            )
+          }))
+        })
+      );
 
       if (isAllowed) {
         return callback(null, true);
       }
 
-      console.error('CORS blocked origin:', origin);
+      console.error('CORS BLOCKED ORIGIN:', origin);
 
-      return callback(new Error('Origin is not allowed by CORS.'));
+      return callback(
+        new Error('Origin is not allowed by CORS.')
+      );
     },
 
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    methods: [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+      'OPTIONS'
+    ],
 
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization'
+    ]
   })
 );
 
-// Parse JSON requests
+// ==========================================
+// 3. BODY PARSER
+// ==========================================
+
 app.use(express.json());
 
-// API routes
+// ==========================================
+// 4. API ROUTES
+// ==========================================
+
 const authRoutes = require('./routes/authRoutes');
 const inquiryRoutes = require('./routes/inquiryRoutes');
 
 app.use('/api/auth', authRoutes);
+
 app.use('/api/inquiries', inquiryRoutes);
+
 app.use('/api/admin/inquiries', inquiryRoutes);
+
+// ==========================================
+// 5. EXPORT EXPRESS APP
+// ==========================================
 
 module.exports = app;
