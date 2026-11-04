@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Activity, ArrowDownUp, CalendarDays, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CircleHelp, Filter, GraduationCap, Inbox, LogOut, Menu, RefreshCw, Search, Users, X } from 'lucide-react';
+import { Activity, ArrowDownUp, BookOpen, CalendarDays, ChartNoAxesCombined, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CircleHelp, Clock3, Filter, GraduationCap, Inbox, LogOut, Menu, Moon, RefreshCw, Search, Sun, Users, UsersRound, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api, errorMessage, labels } from '../services/api.js';
 import Brand from '../components/Brand.jsx';
-import { EmptyState, StatCard, StatusBadge, TableSkeleton, Toast } from '../components/CrmComponents.jsx';
+import { DashboardSidebarSkeleton, DashboardSkeleton, EmptyState, StatCard, StatusBadge, TableSkeleton, Toast } from '../components/CrmComponents.jsx';
 import DashboardAnalytics from '../components/DashboardAnalytics.jsx';
 import { loadAnalyticsFromInquiryPages } from '../services/inquiryAnalytics.js';
 
@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [analytics, setAnalytics] = useState(null); const [analyticsError, setAnalyticsError] = useState('');
   const [analyticsLoading, setAnalyticsLoading] = useState(true); const [days, setDays] = useState(30);
   const [collapsed, setCollapsed] = useState(false); const [toast, setToast] = useState(null);
+  const [darkTheme, setDarkTheme] = useState(() => localStorage.getItem('lumora-dashboard-theme') === 'dark');
   const [now, setNow] = useState(() => new Date());
   const navigate = useNavigate();
   const admin = getAdmin();
@@ -60,27 +61,43 @@ export default function DashboardPage() {
   }, [days]);
   useEffect(() => { loadAnalytics(); }, [loadAnalytics]);
   function refreshDashboard() { load(); loadAnalytics(); }
+  function showInquiries() {
+    setStatus(''); setPage(current => ({ ...current, number: 0 }));
+    requestAnimationFrame(() => document.getElementById('inquiries-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
   function applySearch(e) { e.preventDefault(); setPage(current => ({ ...current, number: 0 })); setQuery(search.trim()); }
   function clearFilters() { setCategory(''); setUserType(''); setStatus(''); setSort('newest'); setSearch(''); setQuery(''); setPage(current => ({ ...current, number: 0 })); }
-  function logout() { localStorage.removeItem('edtech-token'); localStorage.removeItem('edtech-admin'); window.location.assign('/admin/login'); }
+  function logout() { localStorage.removeItem('edtech-token'); localStorage.removeItem('edtech-admin'); navigate('/admin/login', { replace: true }); }
   const hasFilters = Boolean(category || userType || status || query || search);
   const start = page.totalElements === 0 ? 0 : page.number * page.size + 1;
   const end = Math.min((page.number + 1) * page.size, page.totalElements);
+  const initialDashboardLoading = (loading && !hasLoaded) || analyticsLoading;
 
-  return <main className={`dashboard-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
+  return <main className={`dashboard-shell ${collapsed ? 'sidebar-collapsed' : ''} ${darkTheme ? 'theme-dark' : ''}`}>
     <aside className="sidebar" aria-label="Main navigation">
       <div className="side-brand"><Brand/><button className="sidebar-toggle" onClick={() => setCollapsed(v => !v)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!collapsed}><ChevronsLeft size={17}/></button></div>
+      {initialDashboardLoading ? <DashboardSidebarSkeleton/> : <>
       <div className="side-label">WORKSPACE</div>
-      <a href="/admin" className="side-item active" aria-current="page" title={collapsed ? 'Inquiries' : undefined}><Inbox size={18}/><span>Inquiries</span><span className="side-count">{analytics?.newCount || 0}</span></a>
+      <button type="button" className={`side-item ${!status ? 'active' : ''}`} aria-current={!status ? 'page' : undefined} onClick={showInquiries} title={collapsed ? 'Inquiries' : undefined}><Inbox size={18}/><span>Inquiries</span><span className="side-count">{analytics?.newCount || 0}</span></button>
+      <div className="side-section-links" aria-label="Workspace sections">
+        <div className="side-item side-item-static" title={collapsed ? 'Follow-ups' : undefined}><Clock3 size={18}/><span>Follow-ups</span></div>
+        <div className="side-item side-item-static" title={collapsed ? 'Students & Parents' : undefined}><UsersRound size={18}/><span>Students &amp; Parents</span></div>
+        <div className="side-item side-item-static" title={collapsed ? 'Courses & Programs' : undefined}><BookOpen size={18}/><span>Courses &amp; Programs</span></div>
+        <div className="side-item side-item-static" title={collapsed ? 'Admissions' : undefined}><GraduationCap size={18}/><span>Admissions</span></div>
+        <div className="side-item side-item-static" title={collapsed ? 'Reports & Analytics' : undefined}><ChartNoAxesCombined size={18}/><span>Reports &amp; Analytics</span></div>
+        <div className="side-item side-item-static" title={collapsed ? 'Team Management' : undefined}><Users size={18}/><span>Team Management</span></div>
+      </div>
       <div className="side-bottom">
         <div className="side-help"><span className="help-mark"><CircleHelp size={14}/></span><strong>Need a hand?</strong><span>Reach out to your workspace owner.</span></div>
         <button className="profile" onClick={logout} title="Log out"><span className="profile-avatar">{(admin.name || 'A').slice(0,1).toUpperCase()}</span><span className="profile-text"><strong>{admin.name}</strong><small>Administrator</small></span><LogOut size={16}/></button>
       </div>
+      </>}
     </aside>
     <section className="dash-main">
       <header className="dash-top"><div className="top-left"><button className="mobile-menu" onClick={() => setCollapsed(v => !v)} aria-label="Toggle navigation"><Menu size={19}/></button><span className="breadcrumb">Workspace <b>/</b> <strong>Overview</strong></span></div><div className="dash-user"><span>Good to see you, <strong>{admin.name}</strong></span><span className="dash-clock">{now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}<i>·</i>{now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span><span className="profile-avatar small">{(admin.name || 'A').slice(0,1).toUpperCase()}</span></div></header>
       <div className="dash-content">
-        <div className="dashboard-welcome"><div className="page-title-row"><div><span className="eyebrow"><span className="eyebrow-dot"/> INQUIRY MANAGEMENT</span><h1>Good {now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening'}, {(admin.name || 'there').split(' ')[0]}</h1><p>Here’s what’s happening with your inquiries.</p></div><div className="dashboard-actions"><label className="date-range-control"><CalendarDays size={15}/><span className="sr-only">Analytics date range</span><select value={days} onChange={e => setDays(Number(e.target.value))}><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option></select></label><button className="button refresh-button" onClick={refreshDashboard} disabled={loading || analyticsLoading}><RefreshCw size={15} className={loading || analyticsLoading ? 'spin' : ''}/><span>Refresh</span></button></div></div></div>
+        {initialDashboardLoading ? <DashboardSkeleton/> : <>
+        <div className="dashboard-welcome"><div className="page-title-row"><div><span className="eyebrow"><span className="eyebrow-dot"/> INQUIRY MANAGEMENT</span><h1>Good {now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening'}, {(admin.name || 'there').split(' ')[0]}</h1><p>Here’s what’s happening with your inquiries.</p></div><div className="dashboard-actions"><button type="button" className="theme-toggle" onClick={() => setDarkTheme(current => { const next = !current; localStorage.setItem('lumora-dashboard-theme', next ? 'dark' : 'light'); return next; })} aria-label={`Switch to ${darkTheme ? 'light' : 'dark'} theme`} title={`Switch to ${darkTheme ? 'light' : 'dark'} theme`}>{darkTheme ? <Sun size={17}/> : <Moon size={17}/>}</button><label className="date-range-control"><CalendarDays size={15}/><span className="sr-only">Analytics date range</span><select value={days} onChange={e => setDays(Number(e.target.value))}><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option></select></label><button className="button refresh-button" onClick={refreshDashboard} disabled={loading || analyticsLoading}><RefreshCw size={15} className={loading || analyticsLoading ? 'spin' : ''}/><span>Refresh</span></button></div></div></div>
         {analyticsError ? <div className="analytics-error" role="alert"><strong>Analytics are temporarily unavailable.</strong><span>{analyticsError}</span><button className="text-button" onClick={loadAnalytics}>Try again</button></div> : <div className={analyticsLoading ? 'analytics-loading' : ''}>
           <div className="stats-grid"><StatCard icon={Users} label="Total inquiries" value={analytics?.total || 0} tone="navy" hint={`In the last ${days === 365 ? '12 months' : `${days} days`}`} share={analytics?.total ? 100 : 0}/><StatCard icon={Inbox} label="New inquiries" value={analytics?.newCount || 0} tone="blue" hint="Needs attention" share={analytics?.total ? analytics.newCount / analytics.total * 100 : 0}/><StatCard icon={Activity} label="In progress" value={analytics?.inProgress || 0} tone="amber" hint="Being followed up" share={analytics?.total ? analytics.inProgress / analytics.total * 100 : 0}/><StatCard icon={GraduationCap} label="Resolved" value={analytics?.resolved || 0} tone="green" hint="Successfully handled" share={analytics?.total ? analytics.resolved / analytics.total * 100 : 0}/></div>
           <DashboardAnalytics data={analytics}/>
@@ -107,6 +124,7 @@ export default function DashboardPage() {
           </>}
         </section>
         <footer className="dash-footer"><span><GraduationCap size={16}/> Lumora</span><span>Illuminating the Path to Success.</span></footer>
+        </>}
       </div>
     </section>
     <Toast toast={toast} onDismiss={() => setToast(null)}/>

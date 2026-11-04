@@ -30,6 +30,24 @@ export function TableSkeleton({ rows = 5 }) {
   )}<span className="sr-only">Loading inquiries…</span></div>;
 }
 
+export function DashboardSkeleton() {
+  return <div className="dashboard-skeleton" role="status" aria-label="Loading dashboard">
+    <div className="dashboard-skeleton-heading"><div><i/><b/><span/></div><div><i/><i/></div></div>
+    <div className="dashboard-skeleton-stats">{Array.from({ length: 4 }, (_, i) => <div className="dashboard-skeleton-stat" key={i}><i/><span/><b/></div>)}</div>
+    <div className="dashboard-skeleton-chart"><i/><span/><div><b/><b/><b/><b/><b/><b/></div></div>
+    <div className="dashboard-skeleton-table"><div><b/><span/></div><div className="dashboard-skeleton-filters">{Array.from({ length: 4 }, (_, i) => <i key={i}/>)}</div><TableSkeleton rows={5}/></div>
+    <span className="sr-only">Loading dashboard data…</span>
+  </div>;
+}
+
+export function DashboardSidebarSkeleton() {
+  return <div className="sidebar-skeleton" role="status" aria-label="Loading navigation">
+    <i className="sidebar-skeleton-label"/>
+    {Array.from({ length: 6 }, (_, i) => <div className="sidebar-skeleton-row" key={i}><i/><span/></div>)}
+    <div className="sidebar-skeleton-bottom"><i/><span/><b/></div>
+  </div>;
+}
+
 export function EmptyState({ searching, onClear }) {
   return <div className="empty-state"><span className="empty-icon"><Inbox size={22}/></span><strong>{searching ? 'No matching inquiries' : 'Your inbox is clear'}</strong><span>{searching ? 'Try another name, phone number, or filter.' : 'New inquiries will appear here as soon as they arrive.'}</span>{searching && <button className="text-button" onClick={onClear}>Clear filters</button>}</div>;
 }
