@@ -127,6 +127,17 @@ app.use(
         localDevOrigin;
 
       console.log('ORIGIN MATCH:', isAllowed);
+      console.log(
+  'ORIGIN COMPARISON:',
+  JSON.stringify(
+    allowedOrigins.map(item => ({
+      allowed: item,
+      matches: item === normalizedOrigin,
+      allowedLength: item.length,
+      requestLength: normalizedOrigin.length
+    }))
+  )
+);
 
       if (isAllowed) {
         return callback(null, true);
